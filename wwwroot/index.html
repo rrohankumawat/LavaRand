@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lava lamp randomness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #150f2b;
+    --glass: #231a45;
+    --wax-hot: #ff5c8a;
+    --wax-warm: #ffb347;
+    --teal: #4fd6c8;
+    --ink: #f4eeff;
+    --ink-dim: #b3a6d6;
+    --line: #3b2f6b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--night);
+    color: var(--ink);
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  main {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 56px;
+    align-items: start;
+  }
+  .lamp { position: sticky; top: 32px; justify-self: center; width: 280px; }
+  .lamp .cap {
+    height: 34px; margin: 0 40px;
+    background: linear-gradient(#6b5a9e, #3d3170);
+    border-radius: 60px 60px 6px 6px;
+  }
+  .lamp .glass {
+    position: relative; height: 520px;
+    border-radius: 110px 110px 70px 70px / 90px 90px 50px 50px;
+    overflow: hidden;
+    background: var(--glass);
+    box-shadow: inset 0 0 40px rgba(79,214,200,.18), 0 0 70px rgba(255,92,138,.22);
+  }
+  .lamp canvas { width: 100%; height: 100%; display: block; image-rendering: auto; }
+  .lamp .base {
+    height: 120px; margin: 0 14px;
+    background: linear-gradient(#4a3c82, #2a2150);
+    clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+  }
+  h1 {
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    line-height: 1.05; font-weight: 800; letter-spacing: -0.02em;
+    margin: 0 0 14px;
+  }
+  .lede { color: var(--ink-dim); max-width: 56ch; margin: 0 0 36px; font-size: 1.05rem; }
+  section { margin-bottom: 36px; }
+  h2 { font-size: 1.15rem; font-weight: 600; margin: 0 0 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  label { color: var(--ink-dim); font-size: .9rem; display: flex; gap: 8px; align-items: center; }
+  input[type=number] {
+    width: 84px; padding: 8px 10px; border-radius: 8px;
+    background: var(--glass); color: var(--ink);
+    border: 1px solid var(--line); font: inherit;
+  }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer;
+    padding: 9px 16px; border-radius: 999px; border: 0;
+    background: var(--wax-hot); color: #2a0a16;
+  }
+  button.quiet { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  button.quiet[aria-pressed=true] { background: var(--teal); color: #052622; border-color: var(--teal); }
+  button:hover { filter: brightness(1.08); }
+  :focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+  output {
+    display: block; min-height: 3.2em; padding: 14px 16px;
+    background: var(--glass); border: 1px solid var(--line); border-radius: 10px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .92rem;
+    word-break: break-all; color: var(--wax-warm);
+  }
+  .hint { color: var(--ink-dim); font-size: .88rem; margin: 8px 0 0; max-width: 62ch; }
+  .stats { display: flex; flex-wrap: wrap; gap: 28px; margin-bottom: 10px; }
+  .stats div span { display: block; font-size: 1.7rem; font-weight: 800; color: var(--ink); }
+  .stats div { color: var(--ink-dim); font-size: .9rem; }
+  ul.sources { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  ul.sources li {
+    padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line);
+    font-size: .85rem; color: var(--ink-dim);
+  }
+  video { display: none; }
+  @media (max-width: 820px) {
+    main { grid-template-columns: 1fr; gap: 32px; padding-top: 28px; }
+    .lamp { position: static; width: 220px; }
+    .lamp .glass { height: 380px; }
+    .lamp .base { height: 80px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="lamp" aria-hidden="true">
+    <div class="cap"></div>
+    <div class="glass"><canvas id="lamp" width="80" height="150"></canvas></div>
+    <div class="base"></div>
+  </div>
+
+  <div>
+    <h1>Lava lamp randomness</h1>
+    <p class="lede">This server mixes messy, unpredictable data into a pool and blends it with the operating system's random generator. The lamp on the left is one of the sources: its pixels are sent to the server every couple of seconds.</p>
+
+    <section aria-labelledby="draw">
+      <h2 id="draw">Draw random values</h2>
+      <div class="row">
+        <label>Bytes <input id="len" type="number" min="1" max="1024" value="32"></label>
+        <button id="btnBytes">Get random bytes</button>
+      </div>
+      <div class="row">
+        <label>Min <input id="min" type="number" value="1"></label>
+        <label>Max (exclusive) <input id="max" type="number" value="7"></label>
+        <button id="btnInt">Roll a number</button>
+        <button id="btnToken">Make a token</button>
+      </div>
+      <output id="out" aria-live="polite">Press a button to draw from the pool.</output>
+    </section>
+
+    <section aria-labelledby="feed">
+      <h2 id="feed">Feed the pool</h2>
+      <div class="row">
+        <button id="btnCam" class="quiet" aria-pressed="false">Add webcam frames</button>
+      </div>
+      <p class="hint">Point the camera at anything that moves: a real lava lamp, a window, a busy room. Frames are shrunk and sent to your own server only. The virtual lamp is a fun source, but the camera and the server's own timing noise are what add real unpredictability. Every output still includes the OS random generator, so no source can weaken it.</p>
+    </section>
+
+    <section aria-labelledby="pool">
+      <h2 id="pool">Pool status</h2>
+      <div class="stats">
+        <div><span id="sSamples">0</span>samples mixed</div>
+        <div><span id="sBytes">0</span>bytes mixed</div>
+      </div>
+      <ul class="sources" id="sources"></ul>
+    </section>
+  </div>
+</main>
+
+<video id="cam" playsinline muted></video>
+
+<script>
+// ---------- Virtual lava lamp (metaballs) ----------
+const canvas = document.getElementById('lamp');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const W = canvas.width, H = canvas.height;
+const img = ctx.createImageData(W, H);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const speed = reduceMotion ? 0.25 : 1;
+
+const blobs = Array.from({ length: 7 }, () => ({
+  x: W * (0.25 + Math.random() * 0.5),
+  y: H * Math.random(),
+  r: 9 + Math.random() * 9,
+  vy: (Math.random() - 0.5) * 8
+}));
+
+function step(dt) {
+  for (const b of blobs) {
+    b.vy += (Math.random() - 0.5) * 30 * dt;                  // heat flicker
+    b.vy += (b.y < H * 0.3 ? 1 : -1) * 6 * dt;                // warm at bottom rises, cool at top sinks
+    b.vy = Math.max(-14, Math.min(14, b.vy));
+    b.y += b.vy * dt;
+    b.x += Math.sin(performance.now() / 2200 + b.r) * 3 * dt;
+    if (b.y < b.r * 0.4) { b.y = b.r * 0.4; b.vy = Math.abs(b.vy); }
+    if (b.y > H - b.r * 0.4) { b.y = H - b.r * 0.4; b.vy = -Math.abs(b.vy); }
+  }
+}
+
+function paint() {
+  const d = img.data;
+  for (let y = 0; y < H; y++) {
+    const t = y / H;
+    for (let x = 0; x < W; x++) {
+      let f = 0;
+      for (const b of blobs) {
+        const dx = x - b.x, dy = y - b.y;
+        f += (b.r * b.r) / (dx * dx + dy * dy + 1);
+      }
+      const i = (y * W + x) * 4;
+      if (f > 1) {
+        const glow = Math.min(1, (f - 1) * 0.9);
+        d[i]     = 255;
+        d[i + 1] = 92 + (179 - 92) * (1 - t) * 0.9 + glow * 20;
+        d[i + 2] = 138 - t * 70 + (1 - t) * 10;
+      } else {
+        const halo = f * 0.5;
+        d[i]     = 35 + halo * 120;
+        d[i + 1] = 26 + halo * 30;
+        d[i + 2] = 69 + halo * 40;
+      }
+      d[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000) * speed * 3;
+  last = now;
+  step(dt);
+  paint();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ---------- Feeding the server ----------
+const pointerTimes = [];
+addEventListener('pointermove', () => {
+  pointerTimes.push(Math.round(performance.now() * 1000) % 65536);
+  if (pointerTimes.length > 64) pointerTimes.shift();
+});
+
+async function sendFrame(bytes) {
+  try {
+    await fetch('/api/entropy/frame', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: bytes
+    });
+  } catch { /* the server may be busy or rate limiting; skip this frame */ }
+}
+
+setInterval(() => {
+  const pixels = ctx.getImageData(0, 0, W, H).data;
+  const timing = new Uint8Array(new Uint16Array(pointerTimes).buffer);
+  const payload = new Uint8Array(pixels.length + timing.length);
+  payload.set(pixels, 0);
+  payload.set(timing, pixels.length);
+  sendFrame(payload);
+}, 1500);
+
+// Webcam
+const cam = document.getElementById('cam');
+const btnCam = document.getElementById('btnCam');
+const small = document.createElement('canvas');
+small.width = 64; small.height = 48;
+const sctx = small.getContext('2d', { willReadFrequently: true });
+let stream = null, camTimer = null;
+
+btnCam.addEventListener('click', async () => {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    clearInterval(camTimer);
+    stream = null;
+    btnCam.textContent = 'Add webcam frames';
+    btnCam.setAttribute('aria-pressed', 'false');
+    return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    cam.srcObject = stream;
+    await cam.play();
+    btnCam.textContent = 'Stop webcam';
+    btnCam.setAttribute('aria-pressed', 'true');
+    camTimer = setInterval(() => {
+      sctx.drawImage(cam, 0, 0, small.width, small.height);
+      sendFrame(sctx.getImageData(0, 0, small.width, small.height).data);
+    }, 1000);
+  } catch {
+    btnCam.textContent = 'Camera blocked. Allow access and try again';
+  }
+});
+
+// ---------- Drawing values ----------
+const out = document.getElementById('out');
+const val = id => document.getElementById(id).value;
+
+async function show(url, pick) {
+  const res = await fetch(url);
+  const json = await res.json();
+  out.textContent = res.ok ? pick(json) : (json.error || 'Request failed.');
+  refreshStats();
+}
+document.getElementById('btnBytes').onclick = () =>
+  show(`/api/random/bytes?length=${val('len')}`, j => j.hex);
+document.getElementById('btnInt').onclick = () =>
+  show(`/api/random/int?min=${val('min')}&max=${val('max')}`, j => String(j.value));
+document.getElementById('btnToken').onclick = () =>
+  show('/api/random/token?length=32', j => j.token);
+
+// ---------- Pool status ----------
+async function refreshStats() {
+  try {
+    const s = await (await fetch('/api/entropy/stats')).json();
+    document.getElementById('sSamples').textContent = s.samples.toLocaleString();
+    document.getElementById('sBytes').textContent = s.bytesMixed.toLocaleString();
+    const ul = document.getElementById('sources');
+    ul.replaceChildren(...Object.entries(s.bySource).map(([k, v]) => {
+      const li = document.createElement('li');
+      li.textContent = `${k}: ${v.toLocaleString()}`;
+      return li;
+    }));
+  } catch { /* ignore */ }
+}
+setInterval(refreshStats, 2000);
+refreshStats();
+</script>
+</body>
+</html>
